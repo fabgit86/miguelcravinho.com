@@ -476,7 +476,11 @@ $$('.vthumb').forEach(v=>{const id=v.dataset.yt;const img=document.createElement
   const pl=document.createElement('span');pl.className='play';v.prepend(img);v.appendChild(pl);v.setAttribute('aria-label','Play video'+(v.textContent.trim()?': '+v.textContent.trim():''));
   v.addEventListener('click',()=>openVid(id))});
 const modal=$('#modal'),frame=$('#frame');let lastFocus;
-function openVid(id){lastFocus=document.activeElement;if(ctx)ctx.suspend();frame.innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen title="Video"></iframe>`;modal.classList.add('open');$('#closeModal').focus()}
+function openVid(id){
+  // Opened from disk (file://) YouTube gets no referrer and refuses the embed (error 153): open on YouTube instead.
+  if(location.protocol==='file:'){window.open(`https://www.youtube.com/watch?v=${id}`,'_blank','noopener');return}
+  lastFocus=document.activeElement;if(ctx)ctx.suspend();
+  frame.innerHTML=`<iframe src="https://www.youtube.com/embed/${id}?autoplay=1&rel=0&playsinline=1&origin=${encodeURIComponent(location.origin)}" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="Video"></iframe>`;modal.classList.add('open');$('#closeModal').focus()}
 function closeVid(){modal.classList.remove('open');frame.innerHTML='';if(ctx)ctx.resume();lastFocus&&lastFocus.focus()}
 $('#closeModal').addEventListener('click',closeVid);modal.addEventListener('click',e=>{if(e.target===modal)closeVid()});addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('open'))closeVid()});
 
