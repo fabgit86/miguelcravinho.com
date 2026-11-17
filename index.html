@@ -77,17 +77,6 @@ section{scroll-margin-top:80px}
 .hi{font-weight:800;font-size:clamp(80px,12vw,180px);line-height:.8;letter-spacing:-.06em}
 .about p{max-width:60ch;margin-bottom:18px}
 .about p.lead{font-size:22px;font-weight:400;line-height:1.45}
-.board{margin-top:34px;background:var(--butter);border:1.5px solid var(--ink);border-radius:var(--r-lg);padding:26px}
-.board h3{font-weight:600;font-size:18px;margin-bottom:4px}
-.board .sub{font-size:14px;color:var(--muted);margin-bottom:18px}
-.pads{display:flex;flex-wrap:wrap;gap:10px}
-.pad{position:relative;overflow:hidden;padding:11px 18px;border:1.5px solid var(--ink);border-radius:99px;background:var(--paper);font-weight:400;font-size:15px;transition:transform .15s,background .2s}
-.pad:hover{background:#fff;transform:translateY(-2px)}
-.pad:active{transform:scale(.95)}
-.pad.on{background:var(--ink);color:var(--paper)}
-.pad .fill{position:absolute;left:0;bottom:0;height:3px;background:var(--cobalt);width:0}
-.pad.on .fill{animation:fill var(--d,1s) linear forwards}
-@keyframes fill{to{width:100%}}
 
 /* ---------- section heads ---------- */
 .head{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:36px;flex-wrap:wrap}
@@ -205,7 +194,7 @@ section{scroll-margin-top:80px}
         <li><a href="#reels">Reels</a></li>
         <li><a href="#tools">Tools</a></li>
         <li><a href="#contact">Contact</a></li>
-        <li><button class="snd" aria-pressed="false" id="soundToggle"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="lbl">Sound off</span></button></li>
+        <li><button class="snd" aria-pressed="true" id="soundToggle"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="lbl">Sound on</span></button></li>
       </ul>
     </nav>
   </div>
@@ -229,7 +218,7 @@ section{scroll-margin-top:80px}
       </div>
     </div>
     <canvas class="scope" id="scope" aria-hidden="true"></canvas>
-    <p class="scope-hint">Move your mouse over the waveform. Turn sound on and the letters above play too.</p>
+    <p class="scope-hint">Move your mouse over the waveform, or hover the letters above to play them.</p>
   </div>
 </section>
 
@@ -237,23 +226,8 @@ section{scroll-margin-top:80px}
   <div class="wrap about-grid">
     <div class="hi" aria-hidden="true">Hi</div>
     <div>
-      <p class="lead">I'm Miguel, a sound designer based between London and Portugal.</p>
-      <p>I spend an unhealthy amount of time listening to things most people ignore. A rusty gate. A broken fan. Footsteps on twenty different surfaces. Rocks, branches, old machinery, forgotten places. Somewhere in all that noise is the next sound that makes a game feel real.</p>
-      <p>I love turning ordinary recordings into extraordinary moments. Sometimes that means smashing vegetables to build a creature. Sometimes it means hiking with a recorder just to capture the perfect wind. Sometimes it's spending hours shaping a single reload until it finally clicks.</p>
-      <p>If you're making games, films or animation and care about the little details, get in touch.</p>
-      <div class="board">
-        <h3>Things I listen to</h3>
-        <p class="sub">Tap one to hear a quick sketch of it, synthesised live in your browser.</p>
-        <div class="pads" id="pads">
-          <button class="pad" data-snd="gate">A rusty gate<span class="fill"></span></button>
-          <button class="pad" data-snd="fan">A broken fan<span class="fill"></span></button>
-          <button class="pad" data-snd="steps">Footsteps<span class="fill"></span></button>
-          <button class="pad" data-snd="rocks">Rocks<span class="fill"></span></button>
-          <button class="pad" data-snd="wind">The perfect wind<span class="fill"></span></button>
-          <button class="pad" data-snd="creature">A vegetable creature<span class="fill"></span></button>
-          <button class="pad" data-snd="reload">A single reload<span class="fill"></span></button>
-        </div>
-      </div>
+      <p class="lead">I'm Miguel, a sound designer based between London and Portugal, and I spend an unhealthy amount of time listening to things most people ignore.</p>
+      <p>I turn ordinary recordings, from rusty gates and old machinery to smashed vegetables and the perfect wind, into sounds that make games, films and animation feel real. If you care about the little details, get in touch.</p>
     </div>
   </div>
 </section>
@@ -370,7 +344,7 @@ mb.addEventListener('click',()=>{const o=nl.classList.toggle('open');mb.setAttri
 $$('#navlist a').forEach(a=>a.addEventListener('click',()=>{nl.classList.remove('open');mb.setAttribute('aria-expanded',false)}));
 
 /* ---------- audio engine ---------- */
-let ctx,master,analyser,soundOn=false;
+let ctx,master,analyser,soundOn=true;
 function ac(){
   if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();
     master=ctx.createGain();master.gain.value=.55;
@@ -386,43 +360,8 @@ function env(g,t,a,peak,dec){g.gain.setValueAtTime(0.0001,t);g.gain.exponentialR
 function burst(t,{freq=800,q=1,type='bandpass',peak=.6,a=.002,dec=.08}={}){const n=noise(),f=ctx.createBiquadFilter(),g=ctx.createGain();f.type=type;f.frequency.value=freq;f.Q.value=q;n.connect(f);f.connect(g);g.connect(master);env(g,t,a,peak,dec);n.start(t,Math.random()*2);n.stop(t+a+dec+.05)}
 function tone(t,{f=440,type='sine',peak=.3,a=.005,dec=.3,to=null}={}){const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(to)o.frequency.exponentialRampToValueAtTime(to,t+a+dec);o.connect(g);g.connect(master);env(g,t,a,peak,dec);o.start(t);o.stop(t+a+dec+.05)}
 
-const SOUNDS={
-  gate(t){ // creak: saw with stuttering pitch through resonant bandpass
-    const o=ctx.createOscillator(),f=ctx.createBiquadFilter(),g=ctx.createGain();o.type='sawtooth';f.type='bandpass';f.Q.value=9;f.frequency.value=1400;
-    o.frequency.setValueAtTime(38,t);for(let i=0;i<26;i++){o.frequency.setValueAtTime(30+Math.random()*28+i*1.5,t+i*.045)}
-    f.frequency.linearRampToValueAtTime(2300,t+1.2);o.connect(f);f.connect(g);g.connect(master);
-    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.9,t+.08);g.gain.setValueAtTime(.9,t+1);g.gain.exponentialRampToValueAtTime(.0001,t+1.35);o.start(t);o.stop(t+1.4);
-    tone(t+1.25,{f:180,type:'triangle',peak:.35,dec:.4,to:120});burst(t+1.25,{freq:400,peak:.5,dec:.15});return 1.6},
-  fan(t){ // whirr with a rattle
-    const n=noise(),f=ctx.createBiquadFilter(),g=ctx.createGain(),lfo=ctx.createOscillator(),lg=ctx.createGain();f.type='bandpass';f.frequency.value=600;f.Q.value=1.2;
-    lfo.frequency.setValueAtTime(14,t);lfo.frequency.linearRampToValueAtTime(9,t+1.6);lg.gain.value=.25;lfo.connect(lg);lg.connect(g.gain);
-    n.connect(f);f.connect(g);g.connect(master);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.35,t+.3);g.gain.setValueAtTime(.35,t+1.4);g.gain.linearRampToValueAtTime(0,t+1.8);
-    n.start(t);lfo.start(t);n.stop(t+1.85);lfo.stop(t+1.85);
-    for(let i=0;i<14;i++){burst(t+.3+i*.09+Math.random()*.02,{freq:2600,q:4,peak:.25,dec:.02})}
-    tone(t,{f:110,type:'sine',peak:.15,a:.3,dec:1.4,to:90});return 1.9},
-  steps(t){for(let i=0;i<5;i++){const s=t+i*.42;burst(s,{freq:180,type:'lowpass',q:.8,peak:.9,dec:.09});burst(s+.03,{freq:2200,q:1.5,peak:.25,dec:.06})}return 2.2},
-  rocks(t){for(let i=0;i<11;i++){const s=t+Math.pow(i/11,1.6)*1.1;burst(s,{freq:900+Math.random()*2400,q:6,peak:.7-i*.04,dec:.03+Math.random()*.05})}burst(t,{freq:250,type:'lowpass',peak:.6,dec:.25});return 1.3},
-  wind(t){const n=noise(),f=ctx.createBiquadFilter(),g=ctx.createGain();f.type='bandpass';f.Q.value=7;f.frequency.setValueAtTime(300,t);
-    [700,450,1100,600,900,380].forEach((v,i)=>f.frequency.linearRampToValueAtTime(v,t+.4+i*.38));
-    n.connect(f);f.connect(g);g.connect(master);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.8,t+.8);g.gain.linearRampToValueAtTime(.5,t+1.6);g.gain.linearRampToValueAtTime(.9,t+2.1);g.gain.linearRampToValueAtTime(0,t+2.8);n.start(t);n.stop(t+2.85);return 2.9},
-  creature(t){const o=ctx.createOscillator(),o2=ctx.createOscillator(),f=ctx.createBiquadFilter(),g=ctx.createGain(),lfo=ctx.createOscillator(),lg=ctx.createGain();
-    o.type='sawtooth';o2.type='square';o.frequency.setValueAtTime(70,t);o.frequency.linearRampToValueAtTime(140,t+.5);o.frequency.linearRampToValueAtTime(55,t+1.4);o2.frequency.value=73;
-    lfo.frequency.value=28;lg.gain.value=40;lfo.connect(lg);lg.connect(o.frequency);
-    f.type='lowpass';f.frequency.setValueAtTime(400,t);f.frequency.linearRampToValueAtTime(1600,t+.5);f.frequency.linearRampToValueAtTime(300,t+1.4);f.Q.value=6;
-    o.connect(f);o2.connect(f);f.connect(g);g.connect(master);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.5,t+.1);g.gain.setValueAtTime(.5,t+1.1);g.gain.exponentialRampToValueAtTime(.0001,t+1.5);
-    [o,o2,lfo].forEach(x=>{x.start(t);x.stop(t+1.55)});
-    for(let i=0;i<4;i++)burst(t+i*.08,{freq:1200,q:2,peak:.5,dec:.12}); // the squelch
-    return 1.6},
-  reload(t){burst(t,{freq:3000,q:3,peak:.7,dec:.04});tone(t,{f:2100,type:'square',peak:.08,dec:.05});
-    burst(t+.35,{freq:1800,q:2,peak:.6,dec:.12});burst(t+.42,{freq:900,q:1,peak:.5,dec:.08});
-    burst(t+.8,{freq:4200,q:5,peak:.9,dec:.03});tone(t+.8,{f:3300,type:'square',peak:.1,dec:.06});burst(t+.86,{freq:500,type:'lowpass',peak:.6,dec:.12});return 1.1}
-};
-let busy=null;
-$$('.pad').forEach(p=>p.addEventListener('click',()=>{
-  ac();const d=SOUNDS[p.dataset.snd](ctx.currentTime+.02);
-  $$('.pad').forEach(x=>x.classList.remove('on'));void p.offsetWidth;
-  p.style.setProperty('--d',d+'s');p.classList.add('on');clearTimeout(busy);busy=setTimeout(()=>p.classList.remove('on'),d*1000);
-}));
+/* browsers block audio until the first interaction: start it then */
+['pointerdown','keydown','touchstart'].forEach(ev=>addEventListener(ev,()=>{if(soundOn)ac()},{once:true,passive:true}));
 
 /* sound toggle */
 const st=$('#soundToggle');
