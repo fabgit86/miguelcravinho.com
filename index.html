@@ -375,14 +375,28 @@ const st=$('#soundToggle');
 st.addEventListener('click',()=>{soundOn=!soundOn;st.setAttribute('aria-pressed',soundOn);st.querySelector('.lbl').textContent=soundOn?'Sound on':'Sound off';if(soundOn){ac();tone(ctx.currentTime,{f:523,peak:.2,dec:.15});tone(ctx.currentTime+.09,{f:784,peak:.2,dec:.25})}});
 
 /* ---------- name letters as pads ---------- */
-const scale=[261.6,293.7,329.6,392,440,523.3,587.3,659.3,784,880,1046.5,1174.7,1318.5,1568];
+/* sparkle: bell arpeggio + glitter + shimmer echo. Moving right climbs, moving left falls,
+   and the base pitch arcs up to the middle of the name and back down. */
+const pent=[0,2,4,7,9];let lastIdx=-1,shim;
+function shimmerBus(){if(shim)return shim;const d=ctx.createDelay(1),fb=ctx.createGain(),hp=ctx.createBiquadFilter(),wet=ctx.createGain();
+  d.delayTime.value=.11;fb.gain.value=.38;hp.type='highpass';hp.frequency.value=1200;wet.gain.value=.5;
+  d.connect(hp);hp.connect(fb);fb.connect(d);hp.connect(wet);wet.connect(master);
+  shim=ctx.createGain();shim.connect(master);shim.connect(d);return shim}
+function bell(t,f,peak,bus){[[1,1],[2.76,.28],[5.4,.1]].forEach(([m,a])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f*m;o.connect(g);g.connect(bus);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(peak*a,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+.55/m+.15);o.start(t);o.stop(t+.8)})}
+function sparkle(i){ac();const bus=shimmerBus(),t=ctx.currentTime,n=Math.max(2,li);
+  const up=lastIdx<0||i>=lastIdx;lastIdx=i;
+  const base=Math.round(4+6*Math.sin(Math.PI*i/(n-1)));
+  for(let k=0;k<4;k++){const step=base+(up?k:-k),oct=Math.floor(step/5),deg=((step%5)+5)%5;bell(t+k*.045,880*Math.pow(2,oct+pent[deg]/12-1),.13-k*.02,bus)}
+  const nz=noise(),hp=ctx.createBiquadFilter(),g=ctx.createGain();hp.type='highpass';hp.frequency.value=7000;nz.connect(hp);hp.connect(g);g.connect(bus);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.05,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.25);nz.start(t,Math.random()*2);nz.stop(t+.3)}
 let li=0;
 $$('[data-split]').forEach(row=>{const txt=row.textContent;row.textContent='';[...txt].forEach(ch=>{const s=document.createElement('span');s.className='l';s.textContent=ch;s.dataset.i=li++;s.setAttribute('aria-hidden','true');row.appendChild(s)})});
 $$('.name .l').forEach(l=>{
   const hit=()=>{
     if(!reduce){l.style.transform=`translateY(${-14-Math.random()*16}px) rotate(${(Math.random()-.5)*14}deg)`;setTimeout(()=>l.style.transform='',160)}
     l.classList.add('hit');setTimeout(()=>l.classList.remove('hit'),350);
-    if(soundOn){ac();const t=ctx.currentTime;const f=scale[l.dataset.i%scale.length];tone(t,{f,type:'triangle',peak:.22,dec:.5});tone(t,{f:f*2,type:'sine',peak:.06,dec:.25})}
+    if(soundOn){sparkle(+l.dataset.i)}
     kick=1;
   };
   l.addEventListener('pointerenter',hit);l.addEventListener('click',hit);
